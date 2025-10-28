@@ -1,0 +1,210 @@
+# MicroLearn API Test Commands
+
+## 🚀 Start the Server
+```bash
+node src/server.js
+```
+
+## 🧪 Test Commands
+
+### 1. Health Check
+```bash
+curl http://localhost:3000/health
+```
+
+### 2. Get All Root Nodes (Empty initially)
+```bash
+curl http://localhost:3000/api/nodes
+```
+
+### 3. Create Root Subject - Mathematics
+```bash
+curl -X POST http://localhost:3000/api/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Mathematics",
+    "mastery_percentage": 75,
+    "notes": "Focus on algebra and geometry",
+    "node_type": "subject",
+    "metadata": {
+      "difficulty_level": "intermediate",
+      "estimated_hours": 120
+    }
+  }'
+```
+
+### 4. Create Topic - Algebra (Child of Mathematics)
+```bash
+curl -X POST http://localhost:3000/api/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Algebra",
+    "mastery_percentage": 80,
+    "notes": "Good with linear equations, need work on quadratics",
+    "parent_id": "REPLACE_WITH_MATH_NODE_ID",
+    "node_type": "topic",
+    "metadata": {
+      "difficulty_level": "intermediate",
+      "estimated_hours": 40
+    }
+  }'
+```
+
+### 5. Create Concept - Linear Equations (Child of Algebra)
+```bash
+curl -X POST http://localhost:3000/api/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Linear Equations",
+    "mastery_percentage": 90,
+    "notes": "Mastered basic solving, working on word problems",
+    "parent_id": "REPLACE_WITH_ALGEBRA_NODE_ID",
+    "node_type": "concept",
+    "metadata": {
+      "difficulty_level": "beginner",
+      "estimated_hours": 8,
+      "ai_notes": "Student excels at mechanical solving, needs contextual application practice"
+    }
+  }'
+```
+
+### 6. Create Skill - Slope-Intercept Form (Child of Linear Equations)
+```bash
+curl -X POST http://localhost:3000/api/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Slope-Intercept Form",
+    "mastery_percentage": 95,
+    "notes": "y = mx + b form mastered",
+    "parent_id": "REPLACE_WITH_LINEAR_EQ_NODE_ID",
+    "node_type": "skill",
+    "metadata": {
+      "difficulty_level": "beginner",
+      "estimated_hours": 2,
+      "ai_notes": "Ready for advanced applications"
+    }
+  }'
+```
+
+### 7. Get All Root Nodes (Should show Mathematics)
+```bash
+curl http://localhost:3000/api/nodes
+```
+
+### 8. Get Children of Mathematics (Should show Algebra)
+```bash
+curl http://localhost:3000/api/nodes/REPLACE_WITH_MATH_NODE_ID/children
+```
+
+### 9. Get Children of Algebra (Should show Linear Equations)
+```bash
+curl http://localhost:3000/api/nodes/REPLACE_WITH_ALGEBRA_NODE_ID/children
+```
+
+### 10. Get Full Path to Slope-Intercept Form
+```bash
+curl http://localhost:3000/api/nodes/REPLACE_WITH_SLOPE_NODE_ID/path
+```
+
+### 11. Get All Descendants of Mathematics (Should show Algebra, Linear Equations, Slope-Intercept Form)
+```bash
+curl http://localhost:3000/api/nodes/REPLACE_WITH_MATH_NODE_ID/descendants
+```
+
+### 12. Search for "algebra"
+```bash
+curl "http://localhost:3000/api/search?q=algebra"
+```
+
+### 13. Search for "linear"
+```bash
+curl "http://localhost:3000/api/search?q=linear"
+```
+
+### 14. Get nodes with mastery 80-100%
+```bash
+curl "http://localhost:3000/api/nodes/mastery?min=80&max=100"
+```
+
+### 15. Update mastery of Linear Equations to 95%
+```bash
+curl -X PUT http://localhost:3000/api/nodes/REPLACE_WITH_LINEAR_EQ_NODE_ID/mastery \
+  -H "Content-Type: application/json" \
+  -d '{"percentage": 95}'
+```
+
+### 16. Add notes to Linear Equations
+```bash
+curl -X POST http://localhost:3000/api/nodes/REPLACE_WITH_LINEAR_EQ_NODE_ID/notes \
+  -H "Content-Type: application/json" \
+  -d '{"notes": "Updated: Ready for quadratic equations"}'
+```
+
+### 17. Get specific node (Linear Equations)
+```bash
+curl http://localhost:3000/api/nodes/REPLACE_WITH_LINEAR_EQ_NODE_ID
+```
+
+### 18. Export all data
+```bash
+curl http://localhost:3000/api/export
+```
+
+### 19. Test CASCADE DELETE - Delete Algebra (should delete Linear Equations and Slope-Intercept Form too)
+```bash
+curl -X DELETE http://localhost:3000/api/nodes/REPLACE_WITH_ALGEBRA_NODE_ID
+```
+
+### 20. Verify cascade delete worked (Algebra children should be gone)
+```bash
+curl http://localhost:3000/api/nodes/REPLACE_WITH_MATH_NODE_ID/children
+```
+
+### 21. Create another topic - Geometry
+```bash
+curl -X POST http://localhost:3000/api/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Geometry",
+    "mastery_percentage": 60,
+    "notes": "Working on triangles and circles",
+    "parent_id": "REPLACE_WITH_MATH_NODE_ID",
+    "node_type": "topic",
+    "metadata": {
+      "difficulty_level": "intermediate",
+      "estimated_hours": 30
+    }
+  }'
+```
+
+### 22. Final check - Get all root nodes
+```bash
+curl http://localhost:3000/api/nodes
+```
+
+## 🔍 How to Use These Commands
+
+1. **Start the server**: `node src/server.js`
+2. **Copy the first create command** (Mathematics) and run it
+3. **Copy the returned node ID** from the response
+4. **Replace `REPLACE_WITH_MATH_NODE_ID`** in subsequent commands with the actual ID
+5. **Continue with the next create command** and repeat the process
+6. **Test the cascade delete** to see how foreign key constraints work
+
+## 📊 Expected Results
+
+- **Hierarchical Structure**: Mathematics → Algebra → Linear Equations → Slope-Intercept Form
+- **Cascade Delete**: Deleting Algebra should automatically delete all its children
+- **Foreign Key Integrity**: Database prevents orphaned records
+- **Search Functionality**: Can find nodes by name or notes
+- **Mastery Filtering**: Can filter nodes by mastery percentage range
+
+## 🎯 Key Tests
+
+1. **Create Hierarchy**: Build a 4-level learning tree
+2. **Tree Traversal**: Test path and descendants endpoints
+3. **Cascade Operations**: Verify foreign key constraints work
+4. **Search & Filter**: Test query capabilities
+5. **Data Integrity**: Ensure no orphaned records
+
+Run these commands to thoroughly test the database system!

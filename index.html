@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroLearn Database Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .panel h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.4);
+        }
+
+        .tree-view {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .node {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .node:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .node.selected {
+            background: #4facfe;
+            color: white;
+        }
+
+        .node-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .node-details {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .node-children {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ MicroLearn Database Manager</h1>
+            <p>Manage your hierarchical learning nodes with ease</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Panel: Tree View -->
+            <div class="panel">
+                <h2>📚 Learning Tree</h2>
+                <input type="text" class="search-box" id="searchBox" placeholder="Search nodes...">
+                <div id="treeView" class="tree-view">
+                    <div class="loading">Loading tree...</div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Node Management -->
+            <div class="panel">
+                <h2>✏️ Node Management</h2>
+                <div id="statusMessage"></div>
+                
+                <form id="nodeForm">
+                    <div class="form-group">
+                        <label for="nodeName">Name</label>
+                        <input type="text" id="nodeName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nodeType">Type</label>
+                        <select id="nodeType">
+                            <option value="subject">Subject</option>
+                            <option value="topic">Topic</option>
+                            <option value="concept">Concept</option>
+                            <option value="skill">Skill</option>
+                            <option value="lesson">Lesson</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="masteryPercentage">Mastery %</label>
+                        <input type="number" id="masteryPercentage" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parentId">Parent Node ID (optional)</label>
+                        <input type="text" id="parentId" placeholder="Leave empty for root node">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" placeholder="Add notes about this node..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficultyLevel">Difficulty Level</label>
+                        <select id="difficultyLevel">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Create Node</button>
+                    <button type="button" class="btn" onclick="updateSelectedNode()">Update Selected</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteSelectedNode()">Delete Selected</button>
+                    <button type="button" class="btn" onclick="clearForm()">Clear Form</button>
+                </form>
+
+                <div style="margin-top: 30px;">
+                    <h3>🔧 Quick Actions</h3>
+                    <button class="btn" onclick="refreshTree()">Refresh Tree</button>
+                    <button class="btn" onclick="exportData()">Export Data</button>
+                    <button class="btn" onclick="showStats()">Show Statistics</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let selectedNodeId = null;
+        let allNodes = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTree();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('nodeForm').addEventListener('submit', createNode);
+            document.getElementById('searchBox').addEventListener('input', filterTree);
+        }
+
+        async function loadTree() {
+            try {
+                showStatus('Loading tree...', 'info');
+                const response = await fetch(`${API_BASE}/nodes`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    allNodes = result.data;
+                    renderTree(allNodes);
+                    showStatus('Tree loaded successfully!', 'success');
+                } else {
+                    showStatus('Failed to load tree: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error loading tree: ' + error.message, 'error');
+            }
+        }
+
+        function renderTree(nodes) {
+            const treeView = document.getElementById('treeView');
+            
+            if (nodes.length === 0) {
+                treeView.innerHTML = `
+                    <div class="empty-state">
+                        <div>📚</div>
+                        <h3>No nodes found</h3>
+                        <p>Create your first learning node to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            treeView.innerHTML = nodes.map(node => renderNode(node)).join('');
+        }
+
+        function renderNode(node, level = 0) {
+            const indent = 'margin-left: ' + (level * 20) + 'px;';
+            const isSelected = selectedNodeId === node.id;
+            
+            return `
+                <div class="node ${isSelected ? 'selected' : ''}" 
+                     style="${indent}" 
+                     onclick="selectNode('${node.id}')"
+                     data-node-id="${node.id}">
+                    <div class="node-name">${node.name}</div>
+                    <div class="node-details">
+                        Type: ${node.node_type} | Mastery: ${node.mastery_percentage}% | 
+                        Created: ${new Date(node.created_at).toLocaleDateString()}
+                    </div>
+                    ${node.notes ? `<div class="node-details">Notes: ${node.notes}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function selectNode(nodeId) {
+            selectedNodeId = nodeId;
+            const node = allNodes.find(n => n.id === nodeId);
+            
+            if (node) {
+                // Update form with selected node data
+                document.getElementById('nodeName').value = node.name;
+                document.getElementById('nodeType').value = node.node_type;
+                document.getElementById('masteryPercentage').value = node.mastery_percentage;
+                document.getElementById('parentId').value = node.parent_id || '';
+                document.getElementById('notes').value = node.notes || '';
+                document.getElementById('difficultyLevel').value = node.metadata?.difficulty_level || 'intermediate';
+                
+                showStatus(`Selected: ${node.name}`, 'info');
+            }
+            
+            // Update visual selection
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+            document.querySelector(`[data-node-id="${nodeId}"]`).classList.add('selected');
+        }
+
+        async function createNode(event) {
+            event.preventDefault();
+            
+            const nodeData = {
+                name: document.getElementById('nodeName').value,
+                node_type: document.getElementById('nodeType').value,
+                mastery_percentage: parseInt(document.getElementById('masteryPercentage').value),
+                parent_id: document.getElementById('parentId').value || null,
+                notes: document.getElementById('notes').value,
+                metadata: {
+                    difficulty_level: document.getElementById('difficultyLevel').value
+                }
+            };
+
+            try {
+                showStatus('Creating node...', 'info');
+                const response = await fetch(`${API_BASE}/nodes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nodeData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Node created successfully!', 'success');
+                    clearForm();
+                    loadTree();
+                } else {
+                    showStatus('Failed to create node: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error creating node: ' + error.message, 'error');
+            }
+        }
+
+        async function updateSelectedNode() {
+            if (!selectedNodeId) {
+                showStatus('Please select a node to update', 'error');
+                return;
+            }
+
+            const nodeData = {
+                name: document.getElementById('nodeName').value,
+                node_type: document.getElementById('nodeType').value,
+                mastery_percentage: parseInt(document.getElementById('masteryPercentage').value),
+                notes: document.getElementById('notes').value,
+                metadata: {
+                    difficulty_level: document.getElementById('difficultyLevel').value
+                }
+            };
+
+            try {
+                showStatus('Updating node...', 'info');
+                const response = await fetch(`${API_BASE}/nodes/${selectedNodeId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nodeData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Node updated successfully!', 'success');
+                    loadTree();
+                } else {
+                    showStatus('Failed to update node: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error updating node: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteSelectedNode() {
+            if (!selectedNodeId) {
+                showStatus('Please select a node to delete', 'error');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this node and all its children?')) {
+                return;
+            }
+
+            try {
+                showStatus('Deleting node...', 'info');
+                const response = await fetch(`${API_BASE}/nodes/${selectedNodeId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Node deleted successfully!', 'success');
+                    selectedNodeId = null;
+                    clearForm();
+                    loadTree();
+                } else {
+                    showStatus('Failed to delete node: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error deleting node: ' + error.message, 'error');
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('nodeForm').reset();
+            document.getElementById('masteryPercentage').value = 0;
+            selectedNodeId = null;
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+        }
+
+        function filterTree() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const filteredNodes = allNodes.filter(node => 
+                node.name.toLowerCase().includes(searchTerm) ||
+                node.notes.toLowerCase().includes(searchTerm) ||
+                node.node_type.toLowerCase().includes(searchTerm)
+            );
+            renderTree(filteredNodes);
+        }
+
+        async function refreshTree() {
+            await loadTree();
+        }
+
+        async function exportData() {
+            try {
+                showStatus('Exporting data...', 'info');
+                const response = await fetch(`${API_BASE}/export`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const dataStr = JSON.stringify(result.data, null, 2);
+                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'microlearn-export.json';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    showStatus('Data exported successfully!', 'success');
+                } else {
+                    showStatus('Failed to export data: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error exporting data: ' + error.message, 'error');
+            }
+        }
+
+        async function showStats() {
+            try {
+                const response = await fetch(`${API_BASE}/nodes`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const nodes = result.data;
+                    const stats = {
+                        total: nodes.length,
+                        byType: {},
+                        avgMastery: 0,
+                        highMastery: 0
+                    };
+                    
+                    nodes.forEach(node => {
+                        stats.byType[node.node_type] = (stats.byType[node.node_type] || 0) + 1;
+                        stats.avgMastery += node.mastery_percentage;
+                        if (node.mastery_percentage >= 80) stats.highMastery++;
+                    });
+                    
+                    stats.avgMastery = Math.round(stats.avgMastery / nodes.length);
+                    
+                    alert(`📊 Database Statistics:
+                    
+Total Nodes: ${stats.total}
+Average Mastery: ${stats.avgMastery}%
+High Mastery (≥80%): ${stats.highMastery}
+
+By Type:
+${Object.entries(stats.byType).map(([type, count]) => `  ${type}: ${count}`).join('\n')}`);
+                }
+            } catch (error) {
+                showStatus('Error getting statistics: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

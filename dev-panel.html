@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroLearn API Dev Panel</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #569cd6;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 80vh;
+        }
+        
+        .schema-panel {
+            grid-column: 1 / -1;
+            background: #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #3e3e42;
+            margin-bottom: 20px;
+        }
+        
+        .schema-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .table-info {
+            background: #1e1e1e;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid #3e3e42;
+        }
+        
+        .table-name {
+            color: #4ec9b0;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #3e3e42;
+            padding-bottom: 5px;
+        }
+        
+        .column {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .column-name {
+            color: #9cdcfe;
+        }
+        
+        .column-type {
+            color: #ce9178;
+        }
+        
+        .column-constraint {
+            color: #d7ba7d;
+        }
+        
+        .foreign-key {
+            color: #f44747;
+            font-style: italic;
+        }
+        
+        .primary-key {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        
+        .request-panel {
+            background: #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #3e3e42;
+        }
+        
+        .response-panel {
+            background: #2d2d30;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #3e3e42;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #9cdcfe;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+        
+        textarea {
+            height: 200px;
+            resize: vertical;
+        }
+        
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #005a9e;
+        }
+        
+        .response-box {
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+        
+        .status.info {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-btn {
+            background: #3e3e42;
+            color: #d4d4d4;
+            border: 1px solid #3e3e42;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .quick-btn:hover {
+            background: #4e4e52;
+        }
+        
+        .table-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .table-buttons .btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        
+        .table-buttons .btn:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+        
+        .table-data-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            border: 1px solid #404040;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .table-data-display h4 {
+            margin: 0 0 15px 0;
+            color: #ffffff;
+        }
+        
+        .table-data-display pre {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 MicroLearn API Dev Panel</h1>
+        
+        <!-- Database Schema Panel -->
+        <div class="schema-panel">
+            <h2>🗄️ Database Schema & Layers</h2>
+            <div class="schema-content" id="schemaContent">
+                <div class="loading">Loading database schema...</div>
+            </div>
+            
+            <h3>📊 View Modular Levels</h3>
+            <div class="table-buttons">
+                <button onclick="viewLevel(1)" class="btn btn-info">📚 Level 1 (General)</button>
+                <button onclick="viewLevel(2)" class="btn btn-warning">🔬 Level 2 (Domain)</button>
+                <button onclick="viewLevel(3)" class="btn btn-success">📖 Level 3 (Subject)</button>
+                <button onclick="viewLevel(4)" class="btn btn-primary">💡 Level 4 (Topic)</button>
+                <button onclick="viewLevel(5)" class="btn btn-secondary">🎯 Level 5 (Detail)</button>
+            </div>
+            <div class="table-buttons">
+                <button onclick="viewTable('learning_nodes')" class="btn btn-light">🌳 Legacy Nodes</button>
+                <button onclick="viewTable('migrations')" class="btn btn-light">🔄 Migrations</button>
+            </div>
+            <div id="table-data-display" class="table-data-display"></div>
+        </div>
+        
+        <div class="panel">
+            <!-- Request Panel -->
+            <div class="request-panel">
+                <h2>📤 Request</h2>
+                
+                <div class="quick-buttons">
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/nodes')">GET /api/nodes</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/health')">GET /health</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/search?q=test')">GET /api/search</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/export')">GET /api/export</button>
+                    <button class="quick-btn" onclick="setRequest('POST', '/api/nodes')">POST /api/nodes</button>
+                    <button class="quick-btn" onclick="loadSchema()">🔄 Refresh Schema</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="method">Method</label>
+                    <select id="method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="url">URL</label>
+                    <input type="text" id="url" value="/api/nodes" placeholder="/api/nodes">
+                </div>
+                
+                <div class="form-group">
+                    <label for="body">Request Body (JSON)</label>
+                    <textarea id="body" placeholder='{"name": "Test Node", "node_type": "subject"}'></textarea>
+                </div>
+                
+                <button onclick="sendRequest()">🚀 Send Request</button>
+            </div>
+            
+            <!-- Response Panel -->
+            <div class="response-panel">
+                <h2>📥 Response</h2>
+                
+                <div id="status" class="status info">Ready to send request</div>
+                
+                <div class="response-box" id="response">
+                    Click "Send Request" to see the response here...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        
+        function setRequest(method, url, body = '') {
+            document.getElementById('method').value = method;
+            document.getElementById('url').value = url;
+            document.getElementById('body').value = body;
+        }
+        
+        async function sendRequest() {
+            const method = document.getElementById('method').value;
+            const url = document.getElementById('url').value;
+            const body = document.getElementById('body').value;
+            
+            const statusDiv = document.getElementById('status');
+            const responseDiv = document.getElementById('response');
+            
+            try {
+                statusDiv.className = 'status info';
+                statusDiv.textContent = 'Sending request...';
+                responseDiv.textContent = 'Loading...';
+                
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (body && (method === 'POST' || method === 'PUT')) {
+                    options.body = body;
+                }
+                
+                const response = await fetch(`${API_BASE}${url}`, options);
+                const responseText = await response.text();
+                
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (e) {
+                    responseData = responseText;
+                }
+                
+                statusDiv.className = response.ok ? 'status success' : 'status error';
+                statusDiv.textContent = `${response.status} ${response.statusText}`;
+                
+                responseDiv.textContent = JSON.stringify(responseData, null, 2);
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `Error: ${error.message}`;
+                responseDiv.textContent = error.stack;
+            }
+        }
+        
+        // Allow Enter key to send request
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendRequest();
+            }
+        });
+        
+        // Auto-focus URL field
+        document.getElementById('url').focus();
+        
+        // Load schema on page load
+        loadSchema();
+        
+        async function loadSchema() {
+            const schemaContent = document.getElementById('schemaContent');
+            schemaContent.innerHTML = '<div class="loading">Loading database schema...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/schema`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderSchema(result.data);
+                } else {
+                    // Fallback to hardcoded schema if endpoint doesn't exist
+                    renderHardcodedSchema();
+                }
+            } catch (error) {
+                // Fallback to hardcoded schema
+                renderHardcodedSchema();
+            }
+        }
+        
+        function renderSchema(schemaData) {
+            const schemaContent = document.getElementById('schemaContent');
+            schemaContent.innerHTML = schemaData.tables.map(table => `
+                <div class="table-info">
+                    <div class="table-name">${table.name}</div>
+                    ${table.columns.map(col => `
+                        <div class="column">
+                            <span class="column-name ${col.isPrimaryKey ? 'primary-key' : ''} ${col.isForeignKey ? 'foreign-key' : ''}">${col.name}</span>
+                            <span class="column-type">${col.type}</span>
+                            ${col.constraints ? `<span class="column-constraint">${col.constraints}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+        
+        function renderHardcodedSchema() {
+            const schemaContent = document.getElementById('schemaContent');
+            schemaContent.innerHTML = `
+                <div class="table-info">
+                    <div class="table-name">level_1_nodes (General Topics)</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">name</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">content</span>
+                        <span class="column-type">TEXT DEFAULT ''</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">mastery_percentage</span>
+                        <span class="column-type">INTEGER DEFAULT 0</span>
+                        <span class="column-constraint">CHECK(0-100)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name foreign-key">parent_id</span>
+                        <span class="column-type">TEXT NULL</span>
+                        <span class="column-constraint">FK → level_1_nodes(id)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">metadata</span>
+                        <span class="column-type">TEXT DEFAULT '{}'</span>
+                    </div>
+                </div>
+                
+                <div class="table-info">
+                    <div class="table-name">level_2_nodes (Domain Specific)</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">name</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">content</span>
+                        <span class="column-type">TEXT DEFAULT ''</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">mastery_percentage</span>
+                        <span class="column-type">INTEGER DEFAULT 0</span>
+                        <span class="column-constraint">CHECK(0-100)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name foreign-key">parent_id</span>
+                        <span class="column-type">TEXT NULL</span>
+                        <span class="column-constraint">FK → level_2_nodes(id)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">metadata</span>
+                        <span class="column-type">TEXT DEFAULT '{}'</span>
+                    </div>
+                </div>
+                
+                <div class="table-info">
+                    <div class="table-name">level_3_nodes (Subject Specific)</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">name</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">content</span>
+                        <span class="column-type">TEXT DEFAULT ''</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">mastery_percentage</span>
+                        <span class="column-type">INTEGER DEFAULT 0</span>
+                        <span class="column-constraint">CHECK(0-100)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name foreign-key">parent_id</span>
+                        <span class="column-type">TEXT NULL</span>
+                        <span class="column-constraint">FK → level_3_nodes(id)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">metadata</span>
+                        <span class="column-type">TEXT DEFAULT '{}'</span>
+                    </div>
+                </div>
+                
+                <div class="table-info">
+                    <div class="table-name">level_4_nodes (Topic Specific)</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">name</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">content</span>
+                        <span class="column-type">TEXT DEFAULT ''</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">mastery_percentage</span>
+                        <span class="column-type">INTEGER DEFAULT 0</span>
+                        <span class="column-constraint">CHECK(0-100)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name foreign-key">parent_id</span>
+                        <span class="column-type">TEXT NULL</span>
+                        <span class="column-constraint">FK → level_4_nodes(id)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">metadata</span>
+                        <span class="column-type">TEXT DEFAULT '{}'</span>
+                    </div>
+                </div>
+                
+                <div class="table-info">
+                    <div class="table-name">level_5_nodes (Detail Specific)</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">name</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">content</span>
+                        <span class="column-type">TEXT DEFAULT ''</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">mastery_percentage</span>
+                        <span class="column-type">INTEGER DEFAULT 0</span>
+                        <span class="column-constraint">CHECK(0-100)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name foreign-key">parent_id</span>
+                        <span class="column-type">TEXT NULL</span>
+                        <span class="column-constraint">FK → level_5_nodes(id)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">metadata</span>
+                        <span class="column-type">TEXT DEFAULT '{}'</span>
+                    </div>
+                </div>
+                
+                <div class="table-info">
+                    <div class="table-name">users</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">username</span>
+                        <span class="column-type">TEXT UNIQUE NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">email</span>
+                        <span class="column-type">TEXT UNIQUE NOT NULL</span>
+                    </div>
+                </div>
+                
+                <div class="table-info">
+                    <div class="table-name">user_progress</div>
+                    <div class="column">
+                        <span class="column-name primary-key">id</span>
+                        <span class="column-type">TEXT PRIMARY KEY</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name foreign-key">user_id</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                        <span class="column-constraint">FK → users(id)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">node_id</span>
+                        <span class="column-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">level</span>
+                        <span class="column-type">INTEGER NOT NULL</span>
+                        <span class="column-constraint">CHECK(1-5)</span>
+                    </div>
+                    <div class="column">
+                        <span class="column-name">mastery_percentage</span>
+                        <span class="column-type">INTEGER DEFAULT 0</span>
+                        <span class="column-constraint">CHECK(0-100)</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function viewLevel(level) {
+            const tableDataDisplay = document.getElementById('table-data-display');
+            tableDataDisplay.innerHTML = '<div class="loading">Loading level data...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/levels/${level}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    const count = result.count;
+                    
+                    tableDataDisplay.innerHTML = `
+                        <h4>📊 Level ${level} Nodes (${count} records)</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    tableDataDisplay.innerHTML = `
+                        <h4>❌ Error loading Level ${level}</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                tableDataDisplay.innerHTML = `
+                    <h4>❌ Error loading Level ${level}</h4>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function viewTable(tableName) {
+            const tableDataDisplay = document.getElementById('table-data-display');
+            tableDataDisplay.innerHTML = '<div class="loading">Loading table data...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/tables/${tableName}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    const count = result.count;
+                    
+                    tableDataDisplay.innerHTML = `
+                        <h4>📊 ${tableName} (${count} records)</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    tableDataDisplay.innerHTML = `
+                        <h4>❌ Error loading ${tableName}</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                tableDataDisplay.innerHTML = `
+                    <h4>❌ Error loading ${tableName}</h4>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

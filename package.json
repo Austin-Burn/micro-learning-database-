@@ -1,0 +1,34 @@
+{
+  "name": "microlearn",
+  "version": "1.0.0",
+  "description": "Hierarchical learning management system with AI decision-making",
+  "type": "module",
+  "main": "src/data/api.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test-database.js",
+    "init-db": "node -e \"import('./src/data/database.js').then(m => m.dbManager.initialize())\"",
+    "migrate": "node src/data/migrations.js",
+    "server": "node src/server.js"
+  },
+  "keywords": [
+    "learning",
+    "education",
+    "ai",
+    "database",
+    "hierarchical",
+    "micro-lessons"
+  ],
+  "author": "MicroLearn Team",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^9.2.2",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
