@@ -360,6 +360,168 @@ export class DatabaseManager {
     isReady() {
         return this.isInitialized && this.db !== null;
     }
+
+    /**
+     * Get nodes with weights for a specific level
+     * @param {number} level - Level to get nodes from (0 for root level)
+     * @returns {Array} Nodes with selection weights
+     */
+    getNodesWithWeights(level = 0) {
+        try {
+            let query, params;
+            
+            if (level === 0) {
+                query = 'SELECT *, selection_weight FROM learning_nodes WHERE parent_id IS NULL';
+                params = [];
+            } else {
+                query = `SELECT *, selection_weight FROM level_${level}_nodes`;
+                params = [];
+            }
+            
+            const nodes = this.db.prepare(query).all(params);
+            return nodes.map(node => ({
+                ...node,
+                selection_weight: node.selection_weight || 100
+            }));
+        } catch (error) {
+            console.error('Error getting nodes with weights:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Update a single node's weight
+     * @param {number} level - Level of the node (0 for root level)
+     * @param {string} nodeId - Node ID
+     * @param {number} newWeight - New selection weight
+     * @returns {boolean} Success status
+     */
+    updateNodeWeight(level, nodeId, newWeight) {
+        try {
+            let query;
+            
+            if (level === 0) {
+                query = 'UPDATE learning_nodes SET selection_weight = ? WHERE id = ?';
+            } else {
+                query = `UPDATE level_${level}_nodes SET selection_weight = ? WHERE id = ?`;
+            }
+            
+            const result = this.db.prepare(query).run(newWeight, nodeId);
+            return result.changes > 0;
+        } catch (error) {
+            console.error('Error updating node weight:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Batch update weights for multiple nodes
+     * @param {number} level - Level of the nodes (0 for root level)
+     * @param {Array} weightUpdates - Array of {nodeId, newWeight} objects
+     * @returns {number} Number of nodes updated
+     */
+    batchUpdateWeights(level, weightUpdates) {
+        if (!weightUpdates || weightUpdates.length === 0) {
+            return 0;
+        }
+
+        try {
+            const transaction = this.db.transaction(() => {
+                let updatedCount = 0;
+                
+                for (const update of weightUpdates) {
+                    const success = this.updateNodeWeight(level, update.nodeId, update.newWeight);
+                    if (success) {
+                        updatedCount++;
+                    }
+                }
+                
+                return updatedCount;
+            });
+
+            return transaction();
+        } catch (error) {
+            console.error('Error batch updating weights:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Reset all weights to default value
+     * @param {number} level - Level to reset (0 for root level)
+     * @param {number} defaultWeight - Default weight value (default: 100)
+     * @returns {number} Number of nodes updated
+     */
+    resetAllWeights(level = 0, defaultWeight = 100) {
+        try {
+            let query;
+            
+            if (level === 0) {
+                query = 'UPDATE learning_nodes SET selection_weight = ? WHERE parent_id IS NULL';
+            } else {
+                query = `UPDATE level_${level}_nodes SET selection_weight = ?`;
+            }
+            
+            const result = this.db.prepare(query).run(defaultWeight);
+            return result.changes;
+        } catch (error) {
+            console.error('Error resetting weights:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Get weight statistics for a level
+     * @param {number} level - Level to get statistics for (0 for root level)
+     * @returns {Object} Weight statistics
+     */
+    getWeightStatistics(level = 0) {
+        try {
+            const nodes = this.getNodesWithWeights(level);
+            
+            if (nodes.length === 0) {
+                return {
+                    totalNodes: 0,
+                    totalWeight: 0,
+                    averageWeight: 0,
+                    minWeight: 0,
+                    maxWeight: 0,
+                    weightDistribution: { low: 0, normal: 0, high: 0 }
+                };
+            }
+
+            const weights = nodes.map(node => node.selection_weight);
+            const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+            const averageWeight = totalWeight / weights.length;
+            const minWeight = Math.min(...weights);
+            const maxWeight = Math.max(...weights);
+
+            const weightDistribution = {
+                low: weights.filter(w => w < 50).length,
+                normal: weights.filter(w => w >= 50 && w <= 150).length,
+                high: weights.filter(w => w > 150).length
+            };
+
+            return {
+                totalNodes: nodes.length,
+                totalWeight,
+                averageWeight: Math.round(averageWeight),
+                minWeight,
+                maxWeight,
+                weightDistribution
+            };
+        } catch (error) {
+            console.error('Error getting weight statistics:', error);
+            return {
+                totalNodes: 0,
+                totalWeight: 0,
+                averageWeight: 0,
+                minWeight: 0,
+                maxWeight: 0,
+                weightDistribution: { low: 0, normal: 0, high: 0 }
+            };
+        }
+    }
 }
 
 // Export singleton instance

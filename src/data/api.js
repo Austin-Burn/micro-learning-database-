@@ -4,17 +4,24 @@
  */
 import { LearningNodeManager } from './manager.js';
 import { dbManager } from './database.js';
+import { BusinessLogicEngine } from './business-logic.js';
+import { LessonGenerator } from './lesson-generator.js';
 
 export class LearningNodeAPI {
     constructor() {
         this.manager = new LearningNodeManager();
+        this.businessLogic = new BusinessLogicEngine();
+        this.lessonGenerator = new LessonGenerator(this.businessLogic);
     }
 
     /**
      * Initialize database connection
      */
     async initialize() {
-        return await this.manager.initialize();
+        await this.manager.initialize();
+        await this.businessLogic.initialize();
+        await this.lessonGenerator.initialize();
+        return true;
     }
 
     /**
@@ -545,6 +552,301 @@ export class LearningNodeAPI {
     }
 
     /**
+     * POST /api/business-logic/content-review - Perform AI content review
+     */
+    async performContentReview(userPreferences = {}) {
+        try {
+            const review = await this.businessLogic.performContentReview(userPreferences);
+            
+            return {
+                success: true,
+                data: review,
+                message: 'AI content review completed successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * GET /api/business-logic/analysis - Get content analysis
+     */
+    async getContentAnalysis() {
+        try {
+            const analysis = await this.businessLogic.analyzeTopLayerContent();
+            
+            return {
+                success: true,
+                data: analysis,
+                message: 'Content analysis completed successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * GET /api/business-logic/recommendations - Get AI recommendations
+     */
+    async getRecommendations(userPreferences = {}) {
+        try {
+            const topLayerAnalysis = await this.businessLogic.analyzeTopLayerContent();
+            const recommendations = await this.businessLogic.generateRecommendations(topLayerAnalysis, userPreferences);
+            
+            return {
+                success: true,
+                data: recommendations,
+                message: 'AI recommendations generated successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * GET /api/business-logic/learning-paths - Get learning path suggestions
+     */
+    async getLearningPaths(userPreferences = {}) {
+        try {
+            const topLayerAnalysis = await this.businessLogic.analyzeTopLayerContent();
+            const recommendations = await this.businessLogic.generateRecommendations(topLayerAnalysis, userPreferences);
+            const learningPaths = await this.businessLogic.createLearningPathSuggestions(topLayerAnalysis, recommendations);
+            
+            return {
+                success: true,
+                data: learningPaths,
+                message: 'Learning path suggestions generated successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * POST /api/lessons/request - Request new lesson with weighted random selection
+     */
+    async requestLesson(userPreferences = {}) {
+        try {
+            console.log('🎯 API: Requesting lesson with preferences:', userPreferences);
+            const lessonRequest = await this.lessonGenerator.requestLesson(userPreferences);
+            
+            if (lessonRequest.success) {
+                // Generate AI prompt for display
+                const aiPrompt = this.generateAIPrompt(lessonRequest);
+                
+                return {
+                    success: true,
+                    data: {
+                        ...lessonRequest,
+                        aiPrompt: aiPrompt
+                    },
+                    message: 'Lesson request generated successfully with AI prompt'
+                };
+            } else {
+                console.log('❌ API: Lesson request failed:', lessonRequest.error);
+                return lessonRequest;
+            }
+        } catch (error) {
+            console.error('❌ API: Lesson request error:', error);
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * POST /api/lessons/complete - Submit lesson completion
+     */
+    async completeLesson(lessonId, nodeId, passed, score = null) {
+        try {
+            const completionResult = await this.lessonGenerator.completeLessonFeedback(lessonId, nodeId, passed, score);
+            
+            return {
+                success: true,
+                data: completionResult,
+                message: 'Lesson completion processed successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * GET /api/lessons/weights/:level - View current weights at a level
+     */
+    async getLessonWeights(level = 0) {
+        try {
+            const weightDistribution = await this.lessonGenerator.getWeightDistribution(level);
+            
+            return {
+                success: true,
+                data: weightDistribution,
+                message: 'Weight distribution retrieved successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * GET /api/lessons/statistics - Get lesson statistics
+     */
+    async getLessonStatistics() {
+        try {
+            const statistics = await this.lessonGenerator.getLessonStatistics();
+            
+            return {
+                success: true,
+                data: statistics,
+                message: 'Lesson statistics retrieved successfully'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 500
+            };
+        }
+    }
+
+    /**
+     * Generate AI prompt for lesson generation
+     * @param {Object} lessonRequest - Lesson request data
+     * @returns {string} Formatted AI prompt
+     */
+    generateAIPrompt(lessonRequest) {
+        const { selectedTopic, lessonContext, aiPromptContext } = lessonRequest;
+        
+        // Handle "Create New Topic" case
+        if (lessonRequest.isCreateNewTopic) {
+            const prompt = `# AI Topic Creation Prompt
+
+## Context
+**Action**: Create New Topic
+**User Preferences**:
+- Difficulty: ${lessonContext.user.userPreferences.difficulty || 'intermediate'}
+- Duration: ${lessonContext.estimatedDuration} minutes
+- Learning Style: ${lessonContext.user.userPreferences.learning_style || 'mixed'}
+
+## Learning Objectives
+${lessonContext.learningObjectives.map(obj => `- ${obj}`).join('\n')}
+
+## Weight Statistics
+- Total Topics Available: ${lessonRequest.weightStatistics.totalNodes}
+- Average Weight: ${lessonRequest.weightStatistics.averageWeight}
+- Weight Distribution: ${JSON.stringify(lessonRequest.weightStatistics.weightDistribution, null, 2)}
+
+## AI Instructions
+Help the user create a new learning topic by:
+
+1. **Analyzing current knowledge gaps** based on existing topics
+2. **Suggesting relevant new topics** that complement current learning
+3. **Providing topic structure** with clear learning objectives
+4. **Recommending difficulty progression** from current mastery levels
+5. **Creating engaging content outline** for the new topic
+
+## Topic Creation Structure
+- **Topic Name**: Clear, descriptive title
+- **Learning Objectives**: 3-5 specific goals
+- **Prerequisites**: What should be mastered first
+- **Difficulty Level**: Beginner/Intermediate/Advanced
+- **Estimated Duration**: Time to complete
+- **Content Outline**: Main sections and key concepts
+- **Assessment Ideas**: How to measure progress
+
+## Additional Context
+- This option was selected because existing topics are becoming well-mastered
+- New Topic Weight: ${selectedTopic.weight_breakdown.newTopicWeight}
+- Selection method: Weighted random based on overall mastery levels
+- Focus on creating content that fills knowledge gaps
+
+Please generate a comprehensive new topic proposal following this structure.`;
+            
+            return prompt;
+        }
+        
+        // Regular lesson prompt
+        const prompt = `# AI Lesson Generation Prompt
+    
+    ## Selected Topic
+    **Topic**: ${selectedTopic.name}
+    **Current Mastery**: ${selectedTopic.mastery_percentage}%
+    **Difficulty Level**: ${lessonContext.topic.difficulty}
+    **Lesson Type**: ${lessonContext.lessonType}
+    
+    ## User Context
+    **User Preferences**:
+    - Difficulty: ${lessonContext.user.userPreferences.difficulty || 'intermediate'}
+    - Duration: ${lessonContext.estimatedDuration} minutes
+    - Learning Style: ${lessonContext.user.userPreferences.learning_style || 'mixed'}
+    
+    **Learning History**:
+    - Topic Mastery: ${lessonContext.user.topicMastery}%
+    - Last Practiced: ${lessonContext.user.lastPracticed || 'Never'}
+    - Notes: ${lessonContext.user.notes || 'No notes available'}
+    
+    ## Learning Objectives
+    ${lessonContext.learningObjectives.map(obj => `- ${obj}`).join('\n')}
+    
+    ## Weight Statistics
+    - Total Topics Available: ${lessonRequest.weightStatistics.totalNodes}
+    - Average Weight: ${lessonRequest.weightStatistics.averageWeight}
+    - Weight Distribution: ${JSON.stringify(lessonRequest.weightStatistics.weightDistribution, null, 2)}
+    
+    ## AI Instructions
+    Create a ${lessonContext.estimatedDuration}-minute ${lessonContext.lessonType} lesson for "${selectedTopic.name}" that:
+    
+    1. **Matches the user's mastery level** (${selectedTopic.mastery_percentage}%)
+    2. **Focuses on the learning objectives** listed above
+    3. **Adapts to the user's preferred difficulty** (${lessonContext.user.userPreferences.difficulty || 'intermediate'})
+    4. **Includes practical examples** relevant to the topic
+    5. **Provides clear explanations** appropriate for ${lessonContext.topic.difficulty} level
+    6. **Ends with a brief assessment** to measure understanding
+    
+    ## Lesson Structure
+    - **Introduction** (2-3 minutes): Brief overview and objectives
+    - **Core Content** (${Math.round(lessonContext.estimatedDuration * 0.6)} minutes): Main learning material
+    - **Practice/Examples** (${Math.round(lessonContext.estimatedDuration * 0.3)} minutes): Hands-on application
+    - **Summary & Assessment** (2-3 minutes): Review and quick quiz
+    
+    ## Additional Context
+    - This topic was selected using weighted random selection
+    - Weight: ${selectedTopic.selection_weight || 100} (normal = 100)
+    - Selection method: AI-calculated weights based on mastery and user preferences
+    - Topic metadata: ${JSON.stringify(selectedTopic.metadata || {}, null, 2)}
+    
+    Please generate a complete lesson following this structure and context.`;
+    
+        return prompt;
+    }
+
+    /**
      * Handle API requests
      * @param {string} method - HTTP method
      * @param {string} path - Request path
@@ -593,6 +895,30 @@ export class LearningNodeAPI {
                     } else if (pathParts.length === 1 && pathParts[0] === 'nodes') {
                         return await this.getRootNodes();
                     }
+                    
+                    // Business Logic endpoints
+                    else if (pathParts.length === 2 && pathParts[0] === 'business-logic') {
+                        if (pathParts[1] === 'content-review') {
+                            return await this.performContentReview(data.userPreferences || {});
+                        } else if (pathParts[1] === 'analysis') {
+                            return await this.getContentAnalysis();
+                        } else if (pathParts[1] === 'recommendations') {
+                            return await this.getRecommendations(data.userPreferences || {});
+                        } else if (pathParts[1] === 'learning-paths') {
+                            return await this.getLearningPaths(data.userPreferences || {});
+                        }
+                    }
+                    
+                    // Lesson endpoints (GET only)
+                    else if (pathParts.length === 2 && pathParts[0] === 'lessons') {
+                        if (pathParts[1] === 'statistics') {
+                            return await this.getLessonStatistics();
+                        }
+                    } else if (pathParts.length === 3 && pathParts[0] === 'lessons') {
+                        if (pathParts[1] === 'weights') {
+                            return await this.getLessonWeights(parseInt(pathParts[2]) || 0);
+                        }
+                    }
                     break;
 
                 case 'POST':
@@ -608,6 +934,14 @@ export class LearningNodeAPI {
                         return await this.addNotes(pathParts[1], data.notes);
                     } else if (pathParts.length === 1 && pathParts[0] === 'import') {
                         return await this.importData(data);
+                    } else if (pathParts.length === 2 && pathParts[0] === 'business-logic' && pathParts[1] === 'content-review') {
+                        return await this.performContentReview(data.userPreferences || {});
+                    } else if (pathParts.length === 2 && pathParts[0] === 'lessons') {
+                        if (pathParts[1] === 'request') {
+                            return await this.requestLesson(data.userPreferences || {});
+                        } else if (pathParts[1] === 'complete') {
+                            return await this.completeLesson(data.lessonId, data.nodeId, data.passed, data.score);
+                        }
                     }
                     break;
 

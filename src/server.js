@@ -38,6 +38,18 @@ async function initializeServer() {
         console.log('  GET    /api/schema                    - Get database schema');
         console.log('  GET    /api/tables/:tableName         - Get table data');
         console.log('');
+        console.log('🧠 Business Logic endpoints:');
+        console.log('  POST   /api/business-logic/content-review - AI content review');
+        console.log('  GET    /api/business-logic/analysis       - Content analysis');
+        console.log('  GET    /api/business-logic/recommendations - AI recommendations');
+        console.log('  GET    /api/business-logic/learning-paths  - Learning path suggestions');
+        console.log('');
+        console.log('📚 Lesson endpoints (Weighted Random Selection):');
+        console.log('  POST   /api/lessons/request               - Request new lesson with AI prompt');
+        console.log('  POST   /api/lessons/complete               - Submit lesson completion');
+        console.log('  GET    /api/lessons/weights/:level        - View current weights');
+        console.log('  GET    /api/lessons/statistics             - Get lesson statistics');
+        console.log('');
         console.log('📊 Level-based endpoints (Modular Structure):');
         console.log('  GET    /api/levels/:level             - Get all nodes from level (1-5)');
         console.log('  GET    /api/levels/:level/:id         - Get specific node from level');

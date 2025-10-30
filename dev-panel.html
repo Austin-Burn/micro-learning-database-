@@ -297,6 +297,20 @@
                     <button class="quick-btn" onclick="loadSchema()">🔄 Refresh Schema</button>
                 </div>
                 
+                <div class="quick-buttons">
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/business-logic/analysis')">🧠 Content Analysis</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/business-logic/recommendations')">🎯 AI Recommendations</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/business-logic/learning-paths')">🛤️ Learning Paths</button>
+                    <button class="quick-btn" onclick="setRequest('POST', '/api/business-logic/content-review', '{\"userPreferences\": {}}')">🔍 Full Review</button>
+                </div>
+                
+                <div class="quick-buttons">
+                    <button class="quick-btn" onclick="requestLessonNow()">📚 Request Lesson</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/lessons/weights/0')">⚖️ View Weights</button>
+                    <button class="quick-btn" onclick="setRequest('GET', '/api/lessons/statistics')">📊 Lesson Stats</button>
+                    <button class="quick-btn" onclick="testLessonFlow()">🔄 Test Lesson Flow</button>
+                </div>
+                
                 <div class="form-group">
                     <label for="method">Method</label>
                     <select id="method">
@@ -342,6 +356,93 @@
             document.getElementById('body').value = body;
         }
         
+        function testLessonFlow() {
+            console.log('🔄 Testing complete lesson flow...');
+            
+            // Step 1: Request a lesson
+            setRequest('POST', '/api/lessons/request', '{"userPreferences": {"difficulty": "intermediate", "duration": 15}}');
+            
+            setTimeout(() => {
+                // Step 2: Show lesson completion form
+                showLessonCompletionForm();
+            }, 2000);
+        }
+        
+        function showLessonCompletionForm() {
+            const responseDiv = document.getElementById('response');
+            const completionForm = `
+                <div style="margin-top: 20px; padding: 15px; border: 2px solid #4CAF50; border-radius: 8px; background-color: #f9f9f9;">
+                    <h3>📝 Complete Lesson</h3>
+                    <p>Use the lesson data above to complete this lesson:</p>
+                    <div style="margin: 10px 0;">
+                        <label>
+                            <input type="radio" name="lessonResult" value="passed" checked> ✅ Passed
+                        </label>
+                        <label style="margin-left: 20px;">
+                            <input type="radio" name="lessonResult" value="failed"> ❌ Failed
+                        </label>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <label>Score (0-100): </label>
+                        <input type="number" id="lessonScore" value="85" min="0" max="100" style="width: 80px;">
+                    </div>
+                    <button onclick="completeLesson()" style="background-color: #4CAF50; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                        Complete Lesson
+                    </button>
+                </div>
+            `;
+            responseDiv.innerHTML += completionForm;
+        }
+        
+        function completeLesson() {
+            const lessonResult = document.querySelector('input[name="lessonResult"]:checked').value;
+            const score = document.getElementById('lessonScore').value;
+            const passed = lessonResult === 'passed';
+            
+            // Get the lesson ID from the previous response (this is a simplified version)
+            const lessonId = 'lesson_' + Date.now();
+            const nodeId = 'node_1'; // This would come from the lesson request response
+            
+            const completionData = {
+                lessonId: lessonId,
+                nodeId: nodeId,
+                passed: passed,
+                score: parseInt(score)
+            };
+            
+            setRequest('POST', '/api/lessons/complete', JSON.stringify(completionData));
+        }
+        
+        function displayAIPrompt(response) {
+            if (response.data && response.data.aiPrompt) {
+                const responseDiv = document.getElementById('response');
+                const aiPromptDiv = `
+                    <div style="margin-top: 20px; padding: 15px; border: 2px solid #2196F3; border-radius: 8px; background-color: #f0f8ff;">
+                        <h3>🤖 AI Prompt for Lesson Generation</h3>
+                        <div style="background-color: white; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+${response.data.aiPrompt}
+                        </div>
+                        <p style="margin-top: 10px; font-style: italic; color: #666;">
+                            This is the prompt that would be sent to an AI service to generate the actual lesson content.
+                        </p>
+                    </div>
+                `;
+                responseDiv.innerHTML += aiPromptDiv;
+            }
+        }
+        
+        async function requestLessonNow() {
+            console.log('📚 Requesting lesson with automatic send...');
+            
+            // Set the form fields
+            setRequest('POST', '/api/lessons/request', '{"userPreferences": {"difficulty": "intermediate", "duration": 15}}');
+            
+            // Wait a moment for the form to update, then send the request
+            setTimeout(async () => {
+                await sendRequest();
+            }, 100);
+        }
+        
         async function sendRequest() {
             const method = document.getElementById('method').value;
             const url = document.getElementById('url').value;
@@ -380,6 +481,11 @@
                 statusDiv.textContent = `${response.status} ${response.statusText}`;
                 
                 responseDiv.textContent = JSON.stringify(responseData, null, 2);
+                
+                // Display AI prompt if this is a lesson request
+                if (url.includes('/api/lessons/request') && responseData.success && responseData.data && responseData.data.aiPrompt) {
+                    displayAIPrompt(responseData);
+                }
                 
             } catch (error) {
                 statusDiv.className = 'status error';
